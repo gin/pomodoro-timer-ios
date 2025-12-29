@@ -120,46 +120,47 @@ struct ContentView: View {
                 }
                 .navigationTitle("Set Duration")
                 .navigationBarTitleDisplayMode(.inline)
-                
-                .toolbarRole(.editor)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            showCustomPicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Set") {
-                            model.setPreset(minutes: Double(customMinutes))
-                            showCustomPicker = false
-                        }
-                    }
-                }
+
+                // .toolbarRole(.editor)
                 // .toolbar {
                 //     ToolbarItem(placement: .cancellationAction) {
-                //         Button {
+                //         Button("Cancel") {
                 //             showCustomPicker = false
-                //         } label: {
-                //             Image(systemName: "xmark")
-                //                 .font(.system(size: 12, weight: .bold))
-                //                 .foregroundColor(.secondary)
-                //                 .padding(8)
-                //                 .background(.ultraThinMaterial, in: Circle())
                 //         }
                 //     }
                 //     ToolbarItem(placement: .confirmationAction) {
-                //         Button {
+                //         Button("Set") {
                 //             model.setPreset(minutes: Double(customMinutes))
                 //             showCustomPicker = false
-                //         } label: {
-                //             Image(systemName: "checkmark")
-                //                 .font(.system(size: 12, weight: .bold))
-                //                 .foregroundStyle(.black)
-                //                 .padding(8)
-                //                 .background(.yellow, in: Circle())
                 //         }
                 //     }
                 // }
+
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button {
+                            showCustomPicker = false
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.secondary)
+                                .padding(8)
+                                .background(.ultraThinMaterial, in: Circle())
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button {
+                            model.setPreset(minutes: Double(customMinutes))
+                            showCustomPicker = false
+                        } label: {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(.black)
+                                .padding(8)
+                                .background(.yellow, in: Circle())
+                        }
+                    }
+                }
                 .presentationDetents([.height(300)])
             }
         }
