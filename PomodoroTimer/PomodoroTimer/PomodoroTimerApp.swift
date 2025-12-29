@@ -10,14 +10,12 @@ import UIKit
 
 @main
 struct PomodoroTimerApp: App {
-
-    init() {
-        UIApplication.shared.isIdleTimerDisabled = true
-    }
-
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    UIApplication.shared.isIdleTimerDisabled = true
+                }
         }
     }
 }
