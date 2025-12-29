@@ -7,6 +7,35 @@
 
 import SwiftUI
 
+//// For the Cancel/Set buttons to be similar to iOS Alarm Clock's
+//// Check: Access UIKit
+//struct CircularBarButton: UIViewRepresentable {
+//    let systemName: String
+//    let action: () -> Void
+//    let bgColor: UIColor
+//    let fgColor: UIColor
+//
+//    func makeUIView(context: Context) -> UIButton {
+//        let button = UIButton(type: .system)
+//        let config = UIImage.SymbolConfiguration(pointSize: 13, weight: .bold)
+//        let img = UIImage(systemName: systemName, withConfiguration: config)
+//
+//        button.setImage(img, for: .normal)
+//        button.tintColor = fgColor
+//        button.backgroundColor = bgColor
+//
+//        button.layer.cornerRadius = 20
+//        button.clipsToBounds = true
+//        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+//
+//        button.addAction(UIAction { _ in action() }, for: .touchUpInside)
+//
+//        return button
+//    }
+//
+//    func updateUIView(_ uiView: UIButton, context: Context) {}
+//}
+
 struct ContentView: View {
     @State private var model = PomodoroModel()
     @AppStorage("isBlackBackground") private var isBlackBackground = false
@@ -120,7 +149,7 @@ struct ContentView: View {
                 }
                 .navigationTitle("Set Duration")
                 .navigationBarTitleDisplayMode(.inline)
-
+// Button with text "Cancel" and "Set" in oval
                 // .toolbarRole(.editor)
                 // .toolbar {
                 //     ToolbarItem(placement: .cancellationAction) {
@@ -136,31 +165,80 @@ struct ContentView: View {
                 //     }
                 // }
 
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button {
-                            showCustomPicker = false
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.secondary)
-                                .padding(8)
-                                .background(.ultraThinMaterial, in: Circle())
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button {
-                            model.setPreset(minutes: Double(customMinutes))
-                            showCustomPicker = false
-                        } label: {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.black)
-                                .padding(8)
-                                .background(.yellow, in: Circle())
-                        }
-                    }
-                }
+// Button with inner circle
+                //  .toolbar {
+                //      ToolbarItem(placement: .cancellationAction) {
+                //          Button {
+                //              showCustomPicker = false
+                //          } label: {
+                //              Image(systemName: "xmark")
+                //                  .font(.system(size: 12, weight: .bold))
+                //                  .foregroundColor(.secondary)
+                //                  .padding(8)
+                //                  .background(.ultraThinMaterial, in: Circle())
+                //          }
+                //      }
+                //      ToolbarItem(placement: .confirmationAction) {
+                //          Button {
+                //              model.setPreset(minutes: Double(customMinutes))
+                //              showCustomPicker = false
+                //          } label: {
+                //              Image(systemName: "checkmark")
+                //                  .font(.system(size: 12, weight: .bold))
+                //                  .foregroundStyle(.black)
+                //                  .padding(8)
+                //                  .background(.yellow, in: Circle())
+                //          }
+                //      }
+                //  }
+
+// Button with inner circle (big "set" button)
+                // .toolbar {
+                //     ToolbarItem(placement: .cancellationAction) {
+                //         CircularBarButton(
+                //             systemName: "xmark",
+                //             action: { showCustomPicker = false },
+                //             bgColor: UIColor.systemGray5.withAlphaComponent(0.9),
+                //             fgColor: UIColor.secondaryLabel
+                //         )
+                //     }
+
+                //     ToolbarItem(placement: .confirmationAction) {
+                //         CircularBarButton(
+                //             systemName: "checkmark",
+                //             action: {
+                //                 model.setPreset(minutes: Double(customMinutes))
+                //                 showCustomPicker = false
+                //             },
+                //             bgColor: UIColor.systemYellow,
+                //             fgColor: UIColor.black
+                //         )
+                //     }
+                // }
+
+// Button that is decent but not the same as iOS Alarm Clock's color
+                 .toolbar {
+                     ToolbarItem(placement: .cancellationAction) {
+                         Button {
+                             showCustomPicker = false
+                         } label: {
+                             Image(systemName: "xmark")
+                         }
+                         .buttonStyle(.borderedProminent)
+                         .tint(.secondary)
+                     }
+                     ToolbarItem(placement: .confirmationAction) {
+                         Button {
+                             model.setPreset(minutes: Double(customMinutes))
+                             showCustomPicker = false
+                         } label: {
+                             Image(systemName: "checkmark")
+                         }
+                         .buttonStyle(.borderedProminent)
+                         .tint(.yellow)
+                     }
+                 }
+                 
                 .presentationDetents([.height(300)])
             }
         }
