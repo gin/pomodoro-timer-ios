@@ -1,45 +1,11 @@
-//
-//  ContentView.swift
-//  PomodoroTimer
-//
-//  Created by luigi on 12/28/25.
-//
-
 import SwiftUI
-
-//// For the Cancel/Set buttons to be similar to iOS Alarm Clock's
-//// Check: Access UIKit
-//struct CircularBarButton: UIViewRepresentable {
-//    let systemName: String
-//    let action: () -> Void
-//    let bgColor: UIColor
-//    let fgColor: UIColor
-//
-//    func makeUIView(context: Context) -> UIButton {
-//        let button = UIButton(type: .system)
-//        let config = UIImage.SymbolConfiguration(pointSize: 13, weight: .bold)
-//        let img = UIImage(systemName: systemName, withConfiguration: config)
-//
-//        button.setImage(img, for: .normal)
-//        button.tintColor = fgColor
-//        button.backgroundColor = bgColor
-//
-//        button.layer.cornerRadius = 20
-//        button.clipsToBounds = true
-//        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-//
-//        button.addAction(UIAction { _ in action() }, for: .touchUpInside)
-//
-//        return button
-//    }
-//
-//    func updateUIView(_ uiView: UIButton, context: Context) {}
-//}
 
 struct ContentView: View {
     @State private var model = PomodoroModel()
+    @StateObject private var soundManager = SoundManager()
     @AppStorage("isBlackBackground") private var isBlackBackground = false
-
+    @State private var showSoundPicker = false
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -49,7 +15,7 @@ struct ContentView: View {
                 } else {
                     backgroundGradient.ignoresSafeArea()
                 }
-
+                
                 // Grey progress overlay (from left to right)
                 HStack(spacing: 0) {
                     Color.gray.opacity(0.6)
@@ -61,8 +27,19 @@ struct ContentView: View {
                 
                 // Settings Toggle
                 VStack {
-                    HStack {
+                    HStack(spacing: 12) {
                         Spacer()
+                        
+                        Button {
+                            showSoundPicker = true
+                        } label: {
+                            Image(systemName: isBlackBackground ? "speaker.wave.2.fill" : "speaker.wave.2")
+                                .foregroundStyle(.white)
+                                .padding(10)
+                                .background(.ultraThinMaterial, in: Circle())
+                                .opacity(0.6)
+                        }
+                        
                         Button {
                             isBlackBackground.toggle()
                         } label: {
@@ -72,26 +49,29 @@ struct ContentView: View {
                                 .background(.ultraThinMaterial, in: Circle())
                                 .opacity(0.6)
                         }
-                        .padding()
                     }
+                    .padding(.top, 12)
+                    .padding(.trailing, 16)
+                    
                     Spacer()
                 }
-
+                
+                
                 // Main content
                 VStack(spacing: 24) {
                     Text(phaseTitle)
                         .font(.largeTitle)
                         .fontWeight(.light)
                         .foregroundColor(.white)
-
+                    
                     Text(displayTime)
                         .font(.system(size: 60, weight: .bold, design: .monospaced))
                         .foregroundColor(.white)
-
+                    
                     // Preset buttons
                     presetButtonsView
                         .padding(.vertical, 10)
-
+                    
                     // Control buttons
                     HStack(spacing: 20) {
                         Button(model.isRunning ? "Pause" : "Start") {
@@ -102,7 +82,7 @@ struct ContentView: View {
                         .padding(.horizontal, 25)
                         .padding(.vertical, 12)
                         .background(.ultraThinMaterial, in: Capsule())
-
+                        
                         Button("Reset") {
                             model.reset()
                         }
@@ -115,6 +95,16 @@ struct ContentView: View {
                 }
                 .padding()
             }
+        }
+        
+        .onChange(of: model.shouldPlayAlert) {
+            if model.shouldPlayAlert {
+                soundManager.playAlert()
+                model.shouldPlayAlert = false // Reset trigger
+            }
+        }
+        .sheet(isPresented: $showSoundPicker) {
+            SoundPickerView(soundManager: soundManager)
         }
     }
     
@@ -149,96 +139,28 @@ struct ContentView: View {
                 }
                 .navigationTitle("Set Duration")
                 .navigationBarTitleDisplayMode(.inline)
-// Button with text "Cancel" and "Set" in oval
-                // .toolbarRole(.editor)
-                // .toolbar {
-                //     ToolbarItem(placement: .cancellationAction) {
-                //         Button("Cancel") {
-                //             showCustomPicker = false
-                //         }
-                //     }
-                //     ToolbarItem(placement: .confirmationAction) {
-                //         Button("Set") {
-                //             model.setPreset(minutes: Double(customMinutes))
-                //             showCustomPicker = false
-                //         }
-                //     }
-                // }
-
-// Button with inner circle
-                //  .toolbar {
-                //      ToolbarItem(placement: .cancellationAction) {
-                //          Button {
-                //              showCustomPicker = false
-                //          } label: {
-                //              Image(systemName: "xmark")
-                //                  .font(.system(size: 12, weight: .bold))
-                //                  .foregroundColor(.secondary)
-                //                  .padding(8)
-                //                  .background(.ultraThinMaterial, in: Circle())
-                //          }
-                //      }
-                //      ToolbarItem(placement: .confirmationAction) {
-                //          Button {
-                //              model.setPreset(minutes: Double(customMinutes))
-                //              showCustomPicker = false
-                //          } label: {
-                //              Image(systemName: "checkmark")
-                //                  .font(.system(size: 12, weight: .bold))
-                //                  .foregroundStyle(.black)
-                //                  .padding(8)
-                //                  .background(.yellow, in: Circle())
-                //          }
-                //      }
-                //  }
-
-// Button with inner circle (big "set" button)
-                // .toolbar {
-                //     ToolbarItem(placement: .cancellationAction) {
-                //         CircularBarButton(
-                //             systemName: "xmark",
-                //             action: { showCustomPicker = false },
-                //             bgColor: UIColor.systemGray5.withAlphaComponent(0.9),
-                //             fgColor: UIColor.secondaryLabel
-                //         )
-                //     }
-
-                //     ToolbarItem(placement: .confirmationAction) {
-                //         CircularBarButton(
-                //             systemName: "checkmark",
-                //             action: {
-                //                 model.setPreset(minutes: Double(customMinutes))
-                //                 showCustomPicker = false
-                //             },
-                //             bgColor: UIColor.systemYellow,
-                //             fgColor: UIColor.black
-                //         )
-                //     }
-                // }
-
-// Button that is decent but not the same as iOS Alarm Clock's color
-                 .toolbar {
-                     ToolbarItem(placement: .cancellationAction) {
-                         Button {
-                             showCustomPicker = false
-                         } label: {
-                             Image(systemName: "xmark")
-                         }
-                         .buttonStyle(.borderedProminent)
-                         .tint(.secondary)
-                     }
-                     ToolbarItem(placement: .confirmationAction) {
-                         Button {
-                             model.setPreset(minutes: Double(customMinutes))
-                             showCustomPicker = false
-                         } label: {
-                             Image(systemName: "checkmark")
-                         }
-                         .buttonStyle(.borderedProminent)
-                         .tint(.yellow)
-                     }
-                 }
-                 
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button {
+                            showCustomPicker = false
+                        } label: {
+                            Image(systemName: "xmark")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.secondary)
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button {
+                            model.setPreset(minutes: Double(customMinutes))
+                            showCustomPicker = false
+                        } label: {
+                            Image(systemName: "checkmark")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.yellow)
+                    }
+                }
+                
                 .presentationDetents([.height(300)])
             }
         }
@@ -311,7 +233,7 @@ struct ContentView: View {
         }
         return timeString(from: model.remaining)
     }
-
+    
     private var phaseTitle: String {
         switch model.phase {
         case .work:
@@ -322,7 +244,7 @@ struct ContentView: View {
             return "Ready"
         }
     }
-
+    
     private var backgroundGradient: LinearGradient {
         switch model.phase {
         case .work, .stopped:
@@ -339,7 +261,7 @@ struct ContentView: View {
             )
         }
     }
-
+    
     private func timeString(from seconds: Int) -> String {
         let m = seconds / 60
         let s = seconds % 60

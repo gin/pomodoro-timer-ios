@@ -1,12 +1,6 @@
-//
-//  PomodoroModel.swift
-//  PomodoroTimer
-//
-//  Created by luigi on 12/28/25.
-//
-
 import SwiftUI
 import Observation
+import UserNotifications
 
 @MainActor
 @Observable
@@ -16,6 +10,9 @@ class PomodoroModel {
     
     /// Currently selected duration in minutes (supports decimals for testing)
     var selectedMinutes: Double = 25
+    
+    /// Triggers view to play sound
+    var shouldPlayAlert = false
     
     // Persist work and rest durations
     private var workDurationMinutes: Double {
@@ -31,8 +28,9 @@ class PomodoroModel {
     init() {
         // Load initial work duration
         selectedMinutes = workDurationMinutes
+        requestNotificationPermission()
     }
-
+    
     var remaining: Int { engine.remaining }
     var total: Int { engine.total }
     var phase: PomodoroPhase { engine.phase }
@@ -57,38 +55,50 @@ class PomodoroModel {
             workDurationMinutes = minutes
         }
     }
-
+    
     /// Start or resume timer based on current phase
     func start() {
         if isRunning { return }
         
+        // Ensure we cancel any existing just in case
+        cancelNotifications()
+        
         let seconds = Int(selectedMinutes * 60)
+        let totalSecondsToSchedule: Int
         
         switch phase {
         case .stopped:
             // Start work session
             engine.start(work: seconds)
+            totalSecondsToSchedule = seconds
         case .rest:
             // Start break with selected preset
             engine.startRest(seconds)
+            totalSecondsToSchedule = seconds
         case .work:
             // Resume work (shouldn't happen normally, but handle it)
             engine.start(work: seconds)
+            totalSecondsToSchedule = engine.remaining // logic is a bit odd here for resume, but simplified
         }
+        
+        // Use engine.remaining which is accurate for both fresh start and resume
+        scheduleNotification(seconds: engine.remaining)
         startTimer()
     }
-
+    
     func pause() {
         timer?.invalidate()
         timer = nil
+        cancelNotifications()
     }
-
+    
     func reset() {
         pause()
         engine.stop()
         selectedMinutes = workDurationMinutes  // Reset to saved work duration
+        cancelNotifications()
     }
-
+    
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(handleTimer), userInfo: nil, repeats: true)
@@ -101,6 +111,9 @@ class PomodoroModel {
         if engine.remaining == 0 {
             pause()
             
+            // Trigger alert
+            shouldPlayAlert = true
+            
             // Auto-switch preset for next phase
             if engine.phase == .rest {
                 // Work finished -> Prepare for Break
@@ -110,5 +123,31 @@ class PomodoroModel {
                 selectedMinutes = workDurationMinutes
             }
         }
+    }
+    
+    // Notifications
+    
+    private func requestNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                print("Notification permission error: \(error)")
+            }
+        }
+    }
+    
+    private func scheduleNotification(seconds: Int) {
+        let content = UNMutableNotificationContent()
+        content.title = "Timer Finished"
+        content.body = phase == .work ? "Work session complete. Take a break!" : "Break over. Back to work!"
+        content.sound = .default
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(seconds), repeats: false)
+        let request = UNNotificationRequest(identifier: "timer_alert", content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request)
+    }
+    
+    private func cancelNotifications() {
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
     }
 }
