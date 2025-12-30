@@ -110,7 +110,7 @@ struct ContentView: View {
     
     // Time Preset Buttons
     
-    private let presets: [Double] = [0.1, 15, 20, 25, 30] // Add Custom button separately
+    private let presets: [Double] = [10, 30, 60, 5, 15] // Add Custom button separately
     private let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 3)
     
     @State private var showCustomPicker = false
