@@ -1,141 +1,193 @@
-//
-//  PomodoroTimerTests.swift
-//  PomodoroTimerTests
-//
-//  Created by luigi on 12/28/25.
-//
-
-import XCTest
+import Testing
+import Foundation
 @testable import PomodoroTimer
 
-final class PomodoroTimerTests: XCTestCase {
-    //    override func setUpWithError() throws {
-    //        // Put setup code here. This method is called before the invocation of each test method in the class.
-    //    }
-    //
-    //    override func tearDownWithError() throws {
-    //        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    //    }
-    //
-    //    func testExample() throws {
-    //        // This is an example of a functional test case.
-    //        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    //        // Any test you write for XCTest can be annotated as throws and async.
-    //        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-    //        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    //    }
-    //
-    //    func testPerformanceExample() throws {
-    //        // This is an example of a performance test case.
-    //        self.measure {
-    //            // Put the code you want to measure the time of here.
-    //        }
-    //    }
+struct TestingTests {
+    let engine = PomodoroEngine()
     
-    @MainActor
-    func test_start_sets_initial_state() {
+    @Test func test_sanity() {
+        #expect(1 == 1)
+    }
+    
+    @Test()
+    func test_what() async throws {
+        #expect(1 == 1)
+    }
+    @Test("test What is this")
+    func test_what1() async throws {
+        #expect(1 == 1)
+    }
+    
+    @Test("Test with various values", arguments: [
+        1, 2, 3,
+    ])
+    func what2(n: Int) async throws {
+        try #require(n > 0)
+        #expect(n == n)
+    }
+}
+
+struct PomodoroEngineTests {
+    @Test func test_initial_state() {
+        var engine = PomodoroEngine()
+        #expect(engine.phase == .stopped)
+        #expect(engine.remaining == 0)
+        #expect(engine.total == 0)
+    }
+
+    @Test func test_start_work() {
         var engine = PomodoroEngine()
         engine.start(work: 1500)
-        XCTAssertEqual(engine.phase, .work)
-        XCTAssertEqual(engine.remaining, 1500)
+        #expect(engine.phase == .work)
+        #expect(engine.total == 1500)
+        #expect(engine.remaining == 1500)
     }
-    
-    func test_tick_counts_down() {
-        var engine = PomodoroEngine()
-        engine.start(work: 3)
-        engine.tick()
-        XCTAssertEqual(engine.remaining, 2)
-    }
-    
-    @MainActor
-    func test_transition_to_rest() {
-        var engine = PomodoroEngine()
-        engine.start(work: 1)
-        engine.tick() // 0 remaining, phase transitions to rest
-        XCTAssertEqual(engine.phase, .rest)
-        
-        // Manual startRest usage
-        engine.startRest(5)
-        XCTAssertEqual(engine.phase, .rest)
-        XCTAssertEqual(engine.remaining, 5)
-    }
-    
-    @MainActor
-    func test_stop_resets_all_state() {
+
+    @Test func test_tick_decrements_remaining() {
         var engine = PomodoroEngine()
         engine.start(work: 10)
-        engine.stop()
-        XCTAssertEqual(engine.phase, .stopped)
-        XCTAssertEqual(engine.remaining, 0)
+        engine.tick()
+        #expect(engine.remaining == 9)
+        #expect(engine.total == 10)
     }
-    
+
+    @Test func test_transition_work_to_rest() {
+        var engine = PomodoroEngine()
+        engine.start(work: 1)
+        engine.tick()
+        #expect(engine.phase == .rest)
+        #expect(engine.remaining == 0)
+        #expect(engine.total == 1)
+    }
+
+    @Test func test_start_rest() {
+        var engine = PomodoroEngine()
+        engine.startRest(300)
+        #expect(engine.phase == .rest)
+        #expect(engine.total == 300)
+        #expect(engine.remaining == 300)
+    }
+
+    @Test func test_transition_rest_to_stopped() {
+        var engine = PomodoroEngine()
+        engine.startRest(1)
+        engine.tick()
+        #expect(engine.phase == .stopped)
+        #expect(engine.remaining == 0)
+        #expect(engine.total == 1)
+    }
+
+    @Test func test_stop_resets_state() {
+        var engine = PomodoroEngine()
+        engine.start(work: 10)
+        engine.tick()
+        engine.stop()
+        #expect(engine.phase == .stopped)
+        #expect(engine.remaining == 0)
+        #expect(engine.total == 0)
+    }
+
+    @Test func test_tick_at_zero_does_nothing() {
+        var engine = PomodoroEngine()
+        #expect(engine.remaining == 0)
+        engine.tick()
+        #expect(engine.remaining == 0)
+        #expect(engine.phase == .stopped)
+    }
+
     @MainActor
-    func test_model_progress_calculation() {
+    @Test("Phase transition cycle", arguments: [
+        (PomodoroPhase.work, 1),
+        (PomodoroPhase.rest, 1)
+    ])
+    func test_transitions(phase: PomodoroPhase, duration: Int) {
+        var engine = PomodoroEngine()
+        if phase == .work {
+            engine.start(work: duration)
+        } else {
+            engine.startRest(duration)
+        }
+        
+        engine.tick()
+        
+        if phase == .work {
+            #expect(engine.phase == .rest)
+        } else {
+            #expect(engine.phase == .stopped)
+        }
+    }
+}
+
+@MainActor
+struct PomodoroModelTests {
+    // Helper to clean up UserDefaults before each test
+    private func cleanUserDefaults() {
+        // Remove the app's persistent domain to isolate tests
+        if let bundleID = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleID)
+        }
+        let keys = ["workDurationMinutes", "restDurationMinutes"]
+        for key in keys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
+
+    @Test func test_initial_values() {
+        cleanUserDefaults()
         let model = PomodoroModel()
-        model.setPreset(minutes: 100) // 6000 seconds
+        #expect(model.selectedMinutes == 25.0)
+        #expect(model.phase == .stopped)
+        #expect(model.isRunning == false)
+    }
+
+    @Test func test_progress_calculation() {
+        cleanUserDefaults()
+        let model = PomodoroModel()
+        model.setPreset(minutes: 10) // 600 seconds
+        
+        // At start (0/600 processed)
+        #expect(model.progress == 0.0)
+    }
+
+    @Test func test_persistence_saves_work_duration() {
+        cleanUserDefaults()
+        let model = PomodoroModel()
+        model.setPreset(minutes: 45)
+        
+        #expect(UserDefaults.standard.double(forKey: "workDurationMinutes") == 45.0)
+        
+        let newModel = PomodoroModel()
+        #expect(newModel.selectedMinutes == 45.0)
+    }
+
+    @Test(.disabled("Needs mock to test in rest state, or test in UI test"))
+    func test_persistence_saves_rest_duration() {}
+
+    @Test func test_reset_stops_and_restores_preset() {
+        cleanUserDefaults()
+        UserDefaults.standard.set(30.0, forKey: "workDurationMinutes")
+        
+        let model = PomodoroModel()
         model.start()
+        #expect(model.isRunning == true)
         
-        // Initial progress 0
-        XCTAssertEqual(model.progress, 0.0)
+        model.reset()
+        #expect(model.isRunning == false)
+        #expect(model.phase == .stopped)
+        #expect(model.selectedMinutes == 30.0)
+    }
+
+    @Test func test_setPreset_ignored_when_running() {
+        cleanUserDefaults()
+        let model = PomodoroModel()
+        model.start()
+        let originalMinutes = model.selectedMinutes
         
-        func tearDown() {
-            // Ensure UserDefaults is clean for the next test
-            let keys = ["workDurationMinutes", "restDurationMinutes"]
-            for key in keys {
-                UserDefaults.standard.removeObject(forKey: key)
-            }
-            super.tearDown()
-        }
+        model.setPreset(minutes: 10)
+        #expect(model.selectedMinutes == originalMinutes)
         
-        @MainActor
-        func test_model_progress_calculation() {
-            let model = PomodoroModel()
-            model.setPreset(minutes: 100) // 6000 seconds
-            model.start()
-            
-            // Initial progress 0
-            XCTAssertEqual(model.progress, 0.0)
-            
-            // Cleanup: Important to stop the timer so it doesn't leak into other tests
-            model.pause()
-        }
-        
-        @MainActor
-        func test_persistence_saves_settings() {
-            let key = "workDurationMinutes"
-            let model = PomodoroModel()
-            
-            // Initial default
-            XCTAssertEqual(model.selectedMinutes, 25.0)
-            
-            // Change preset (Work phase)
-            model.setPreset(minutes: 45)
-            XCTAssertEqual(UserDefaults.standard.double(forKey: key), 45.0)
-            
-            // New model instance should load it
-            let newModel = PomodoroModel()
-            XCTAssertEqual(newModel.selectedMinutes, 45.0)
-        }
-        
-        @MainActor
-        func test_reset_restores_work_preset() {
-            // Mock saved work duration
-            UserDefaults.standard.set(30.0, forKey: "workDurationMinutes")
-            
-            let model = PomodoroModel()
-            // Ensure it loaded the 30m
-            XCTAssertEqual(model.selectedMinutes, 30.0)
-            
-            // Change to 15m
-            model.setPreset(minutes: 15.0)
-            XCTAssertEqual(model.selectedMinutes, 15.0)
-            
-            // Reset
-            model.reset()
-            
-            // Reset should stop timer and reload work duration (which is now 15m)
-            XCTAssertEqual(model.selectedMinutes, 15.0)
-            XCTAssertFalse(model.isRunning)
-        }
+        model.pause()
+        model.setPreset(minutes: 10)
+        #expect(model.selectedMinutes == 10.0)
     }
 }
