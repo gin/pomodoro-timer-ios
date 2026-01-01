@@ -2,40 +2,15 @@ import Testing
 import Foundation
 @testable import PomodoroTimer
 
-struct TestingTests {
-    let engine = PomodoroEngine()
-    
-    @Test func test_sanity() {
-        #expect(1 == 1)
-    }
-    
-    @Test()
-    func test_what() async throws {
-        #expect(1 == 1)
-    }
-    @Test("test What is this")
-    func test_what1() async throws {
-        #expect(1 == 1)
-    }
-    
-    @Test("Test with various values", arguments: [
-        1, 2, 3,
-    ])
-    func what2(n: Int) async throws {
-        try #require(n > 0)
-        #expect(n == n)
-    }
-}
-
 struct PomodoroEngineTests {
-    @Test func test_initial_state() {
+    @Test func initial_state_should_be_stopped_with_zero_time() {
         var engine = PomodoroEngine()
         #expect(engine.phase == .stopped)
         #expect(engine.remaining == 0)
         #expect(engine.total == 0)
     }
 
-    @Test func test_start_work() {
+    @Test func start_work_should_initialize_work_phase_and_time() {
         var engine = PomodoroEngine()
         engine.start(work: 1500)
         #expect(engine.phase == .work)
@@ -43,7 +18,7 @@ struct PomodoroEngineTests {
         #expect(engine.remaining == 1500)
     }
 
-    @Test func test_tick_decrements_remaining() {
+    @Test func tick_should_decrement_remaining_time() {
         var engine = PomodoroEngine()
         engine.start(work: 10)
         engine.tick()
@@ -51,7 +26,7 @@ struct PomodoroEngineTests {
         #expect(engine.total == 10)
     }
 
-    @Test func test_transition_work_to_rest() {
+    @Test func engine_should_transition_from_work_to_rest_on_completion() {
         var engine = PomodoroEngine()
         engine.start(work: 1)
         engine.tick()
@@ -60,7 +35,7 @@ struct PomodoroEngineTests {
         #expect(engine.total == 1)
     }
 
-    @Test func test_start_rest() {
+    @Test func start_rest_should_initialize_rest_phase_and_time() {
         var engine = PomodoroEngine()
         engine.startRest(300)
         #expect(engine.phase == .rest)
@@ -68,7 +43,7 @@ struct PomodoroEngineTests {
         #expect(engine.remaining == 300)
     }
 
-    @Test func test_transition_rest_to_stopped() {
+    @Test func engine_should_transition_from_rest_to_stopped_on_completion() {
         var engine = PomodoroEngine()
         engine.startRest(1)
         engine.tick()
@@ -77,7 +52,7 @@ struct PomodoroEngineTests {
         #expect(engine.total == 1)
     }
 
-    @Test func test_stop_resets_state() {
+    @Test func stop_should_reset_phase_and_all_times() {
         var engine = PomodoroEngine()
         engine.start(work: 10)
         engine.tick()
@@ -87,7 +62,7 @@ struct PomodoroEngineTests {
         #expect(engine.total == 0)
     }
 
-    @Test func test_tick_at_zero_does_nothing() {
+    @Test func tick_at_zero_should_not_change_anything() {
         var engine = PomodoroEngine()
         #expect(engine.remaining == 0)
         engine.tick()
@@ -100,7 +75,7 @@ struct PomodoroEngineTests {
         (PomodoroPhase.work, 1),
         (PomodoroPhase.rest, 1)
     ])
-    func test_transitions(phase: PomodoroPhase, duration: Int) {
+    func phase_should_transition_correctly_on_cycle(phase: PomodoroPhase, duration: Int) {
         var engine = PomodoroEngine()
         if phase == .work {
             engine.start(work: duration)
@@ -132,7 +107,7 @@ struct PomodoroModelTests {
         }
     }
 
-    @Test func test_initial_values() {
+    @Test func initial_model_values_should_have_default_values() {
         cleanUserDefaults()
         let model = PomodoroModel()
         #expect(model.selectedMinutes == 25.0)
@@ -140,7 +115,7 @@ struct PomodoroModelTests {
         #expect(model.isRunning == false)
     }
 
-    @Test func test_progress_calculation() {
+    @Test func progress_should_be_calculated_correctly() {
         cleanUserDefaults()
         let model = PomodoroModel()
         model.setPreset(minutes: 10) // 600 seconds
@@ -149,7 +124,7 @@ struct PomodoroModelTests {
         #expect(model.progress == 0.0)
     }
 
-    @Test func test_persistence_saves_work_duration() {
+    @Test func work_duration_should_persist_in_user_defaults() {
         cleanUserDefaults()
         let model = PomodoroModel()
         model.setPreset(minutes: 45)
@@ -161,9 +136,9 @@ struct PomodoroModelTests {
     }
 
     @Test(.disabled("Needs mock to test in rest state, or test in UI test"))
-    func test_persistence_saves_rest_duration() {}
+    func rest_duration_should_persist_in_user_defaults() {}
 
-    @Test func test_reset_stops_and_restores_preset() {
+    @Test func reset_should_stop_timer_and_restore_work_preset() {
         cleanUserDefaults()
         UserDefaults.standard.set(30.0, forKey: "workDurationMinutes")
         
@@ -177,7 +152,7 @@ struct PomodoroModelTests {
         #expect(model.selectedMinutes == 30.0)
     }
 
-    @Test func test_setPreset_ignored_when_running() {
+    @Test func set_preset_should_be_ignored_when_timer_is_running() {
         cleanUserDefaults()
         let model = PomodoroModel()
         model.start()
