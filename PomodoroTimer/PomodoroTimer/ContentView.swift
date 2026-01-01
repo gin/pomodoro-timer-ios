@@ -73,24 +73,22 @@ struct ContentView: View {
                         .padding(.vertical, 10)
                     
                     // Control buttons
-                    HStack(spacing: 20) {
-                        Button(model.isRunning ? "Pause" : "Start") {
-                            model.isRunning ? model.pause() : model.start()
-                        }
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .padding(.horizontal, 25)
-                        .padding(.vertical, 12)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        
+                    HStack(spacing: 160) {
                         Button("Reset") {
                             model.reset()
                         }
                         .font(.headline)
                         .foregroundColor(.primary)
-                        .padding(.horizontal, 25)
-                        .padding(.vertical, 12)
-                        .background(.ultraThinMaterial, in: Capsule())
+                        .frame(width: 90, height: 90)
+                        .background(.ultraThinMaterial, in: Circle())
+                        
+                        Button(model.isRunning ? "Pause" : "Start") {
+                            model.isRunning ? model.pause() : model.start()
+                        }
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .frame(width: 90, height: 90)
+                        .background(.ultraThinMaterial, in: Circle())
                     }
                 }
                 .padding()
@@ -106,6 +104,18 @@ struct ContentView: View {
         .sheet(isPresented: $showSoundPicker) {
             NavigationStack {
                 SoundPickerView(soundManager: soundManager, isPresented: $showSoundPicker)
+            }
+        }
+        .sheet(isPresented: $showCustomPicker) {
+            NavigationStack {
+                CustomDurationPickerView(
+                    customMinutes: $customMinutes,
+                    isPresented: $showCustomPicker,
+                    onConfirm: { minutes in
+                        model.setPreset(minutes: Double(minutes))
+                    }
+                )
+                .presentationDetents([.height(300)])
             }
         }
     }
@@ -128,44 +138,6 @@ struct ContentView: View {
             customButton
         }
         .padding(.horizontal)
-        .sheet(isPresented: $showCustomPicker) {
-            NavigationStack {
-                VStack {
-                    Picker("Minutes", selection: $customMinutes) {
-                        ForEach(1...180, id: \.self) { minute in
-                            Text("\(minute) min").tag(minute)
-                        }
-                    }
-                    .pickerStyle(.wheel)
-                    .labelsHidden()
-                }
-                .navigationTitle("Set Duration")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button {
-                            showCustomPicker = false
-                        } label: {
-                            Image(systemName: "xmark")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.secondary)
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button {
-                            model.setPreset(minutes: Double(customMinutes))
-                            showCustomPicker = false
-                        } label: {
-                            Image(systemName: "checkmark")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.yellow)
-                    }
-                }
-                
-                .presentationDetents([.height(300)])
-            }
-        }
     }
     
     private var customButton: some View {
