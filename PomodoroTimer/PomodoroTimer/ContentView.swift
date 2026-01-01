@@ -104,7 +104,9 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $showSoundPicker) {
-            SoundPickerView(soundManager: soundManager)
+            NavigationStack {
+                SoundPickerView(soundManager: soundManager, isPresented: $showSoundPicker)
+            }
         }
     }
     
