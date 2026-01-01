@@ -1,18 +1,18 @@
 import XCTest
 
 final class PomodoroTimerUITests: XCTestCase {
-
+    
     override func setUpWithError() throws {
         // Stop immediately when a failure occurs.
         continueAfterFailure = false
     }
-
+    
     @MainActor
     func test_start_pause_reset_flow() throws {
         let app = XCUIApplication()
         app.launch()
         
-        // 1. Verify initial state (Should see "Start" button)
+        // 1. Verify initial state
         let startButton = app.buttons["Start"]
         XCTAssertTrue(startButton.exists, "Start button should exist on launch")
         
@@ -33,12 +33,9 @@ final class PomodoroTimerUITests: XCTestCase {
         let resetButton = app.buttons["Reset"]
         resetButton.tap()
         
-        // 7. Verify time text is present (e.g. checking for a valid time format like "25:00" or whatever preset was last)
-        // Since persistence is on, we can't guarantee "25:00" without clearing data, 
-        // but we can verify the text element exists.
-        // Let's tap 25min to be sure if we want exact matching.
-        app.buttons["25min"].tap()
-        XCTAssertTrue(app.staticTexts["25:00"].exists)
+        // 7. Verify time text is present
+        app.buttons["15min"].tap()
+        XCTAssertTrue(app.staticTexts["15:00"].exists)
     }
     
     @MainActor
@@ -46,28 +43,20 @@ final class PomodoroTimerUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
         
-        // 1. Tap 15min preset
-        app.buttons["15min"].tap()
+        app.buttons["10min"].tap()
+        XCTAssertTrue(app.staticTexts["10:00"].exists, "Timer should display 10:00 after selecting 10min preset")
         
-        // 2. Verify display updates to 15:00
-        XCTAssertTrue(app.staticTexts["15:00"].exists, "Timer should display 15:00 after selecting 15min preset")
-        
-        // 3. Tap 20min preset
-        app.buttons["20min"].tap()
-        
-        // 4. Verify display updates to 20:00
-        XCTAssertTrue(app.staticTexts["20:00"].exists, "Timer should display 20:00 after selecting 20min preset")
-        
-        // 5. Tap 25min preset
-        app.buttons["25min"].tap()
-        
-        // 6. Verify display updates to 25:00
-        XCTAssertTrue(app.staticTexts["25:00"].exists, "Timer should display 25:00 after selecting 25min preset")
-        
-        // 7. Tap 30min preset
         app.buttons["30min"].tap()
-        
-        // 8. Verify display updates to 30:00
         XCTAssertTrue(app.staticTexts["30:00"].exists, "Timer should display 30:00 after selecting 30min preset")
+        
+        app.buttons["60min"].tap()
+        XCTAssertTrue(app.staticTexts["60:00"].exists, "Timer should display 60:00 after selecting 60min preset")
+        
+        app.buttons["5min"].tap()
+        XCTAssertTrue(app.staticTexts["05:00"].exists, "Timer should display 05:00 after selecting 5min preset")
+        
+        app.buttons["15min"].tap()
+        XCTAssertTrue(app.staticTexts["15:00"].exists, "Timer should display 15:00 after selecting 15min preset")
     }
+
 }
